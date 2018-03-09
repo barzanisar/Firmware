@@ -253,10 +253,13 @@ Syslink::open_serial(const char *dev)
 	tcgetattr(fd, &config);
 
 	// clear ONLCR flag (which appends a CR for every LF)
-	config.c_oflag &= ~ONLCR;
+	config.c_oflag = 0;
+
+	config.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
 
 	// Disable hardware flow control
 	config.c_cflag &= ~CRTSCTS;
+	//config.c_cflag &= ~(CSTOPB | PARENB | CRTSCTS);
 
 
 	/* Set baud rate */
@@ -741,13 +744,9 @@ Syslink::send_bytes(const void *data, size_t len)
 		// Block until we can send a byte
 		while (px4_arch_gpioread(GPIO_NRF_TXEN)) ;
 
-		
+		write(_fd, ((const char *)data) + i, 1);
+		fsync(_fd);
 
-		if (write(_fd, ((const char *)data) + i, 1)!= 1){
-			printf("error write failed\n");
-		}
-
-	
 	}
 
 	return 0;
